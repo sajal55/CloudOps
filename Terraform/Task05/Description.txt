@@ -1,0 +1,42 @@
+We need to create a dashboard and in this particular dashboard we need to fetch the CPU utilization of Ec2 instance by SQL Query:
+
+1)First Approach : I need to deploy 2 ec2 instance by terraform  and create a dashboard and then manually need to deploy the SQL query. 
+
+2) Second Approach : Automate all this by terraform . 
+
+attaching code of Second Approach:
+
+provider "aws" {
+  region = "us-east-1" 
+  access_key = "AKI&JHDYJDSMRMJDJNUCXET"
+  secret_key ="LIDDBYDhgdyndndjsmkVP76bxVrEzHSUBDugbBWEtsb6P" 
+}
+
+resource "aws_cloudwatch_dashboard" "example_dashboard" {
+  dashboard_name = "Neofinal"
+
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type = "metric",
+        x    = 0,
+        y    = 0,
+        # The X and Y coordinates on the dashboard grid where the widget will be placed.
+        width = 12,
+        height = 6,
+        # which determine its size on the dashboard.
+        properties = {
+          view = "timeSeries",#Specifies the type of visualization, which is "timeSeries" for a time-based line chart.
+          stacked = false, # Specifies whether the metrics should be stacked in the visualization (in this case, it's set to false).
+          metrics = [
+[ { "expression": "SELECT AVG(CPUUtilization) FROM SCHEMA(\"AWS/EC2\", InstanceId) GROUP BY InstanceId ORDER BY AVG() DESC limit 3", "label": "", "id": "q1", "region": "us-east-1" } ]
+          ],
+      
+          "stat":"Average",
+          region = "us-east-1",  # Set your desired region
+          title = "EC2-CPU-Utilization"
+        }
+      }
+    ]
+  })
+}

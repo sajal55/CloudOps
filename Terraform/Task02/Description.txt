@@ -1,0 +1,149 @@
+We need to deploy an EC2 instance and we need to install Cloud Watch Agent in that particular EC2 instance and we need to Fetch the log data:
+
+Firstly we need to create a policy  and a Iam role and attach policy to Iam role  and then we need to create an instance profile using role and then we need to attach Iam role to our Ec2:
+
+Attaching code : 
+
+main.tf file : 
+
+resource "aws_iam_policy" "task_policy" {
+  name        = "task_policy"
+  description = "Permissions for EC2 and terraform cloud agent deploy"
+  policy      = jsonencode({
+    Version: "2012-10-17",
+    Statement: [
+        {
+            Action: [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+            ],
+            Effect: "Allow",
+            Resource: "arn:aws:logs:*:*:*"
+        }
+      ]
+    })
+}
+
+### Create IAM role
+resource "aws_iam_role" "example_role" {
+  name = "task2"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = "examplerole"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+### Attach IAM policy to IAM role
+resource "aws_iam_policy_attachment" "policy_attach" {
+  name       = "example_policy_attachment"
+  roles      = [aws_iam_role.example_role.name]
+  policy_arn = aws_iam_policy.task_policy.arn
+}
+
+### Create instance profile using role
+resource "aws_iam_instance_profile" "example_profile" {
+  name = "example_profile"
+  role = aws_iam_role.example_role.name
+}
+
+### Create EC2 instance and attache IAM role
+resource "aws_instance" "example_instance" {
+  instance_type        = var.ec2_instance_type
+  ami                  = var.image_id
+  key_name = "mykey"
+  security_groups = [aws_security_group.TF_SG.name]
+  iam_instance_profile = aws_iam_instance_profile.example_profile.name
+}
+resource "aws_security_group" "TF_SG" {
+  name        = "security group using Terraform"
+  description = "security group using Terraform"
+  vpc_id      = "vpc-0a86b3f9384fa9c26"
+
+  ingress {
+    description      = "HTTPS"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
+    description      = "HTTP"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
+    description      = "SSH"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "TF_SG"
+  }
+}
+
+provider.tf file: 
+
+provider "aws" {
+  region = "us-east-1" 
+  access_key = "AKIA3HYGSSMRR4PUUGGBGT"
+  secret_key ="LUjKresETpCKEymlDVP76bxVrEzIPHy0XNwW6P" 
+}
+
+
+terraform.tfvars file: 
+
+region_name       = "us-east-1"
+ec2_instance_type = "t2.micro"
+image_id          = "ami-0f34c5ae932e6f0e4"
+
+variables.tf file : 
+
+variable "region_name" {
+  description = "Region to create the resources"
+  type        = string
+  default=true
+}
+
+variable "ec2_instance_type" {
+  description = "Instance type to create the resources"
+  type        = string
+}
+
+variable "image_id" {
+  description = "Image AMI to create the resources"
+  type        = string
+}
+
+Thank you 
+
+tfvars

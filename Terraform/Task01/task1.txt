@@ -1,0 +1,50 @@
+provider "aws" {
+  region = "us-east-1" 
+  access_key = "AKIA3JGKSSMRR4PUCXET"
+  secret_key ="LUjK24vABfdFpCJKmlDVP76bxVrEzIPHy0XNwW6P" 
+}
+
+# EC2 Instance
+resource "aws_instance" "example" {
+  ami           = "ami-053b0d53c279acc90"  
+  instance_type = "t2.micro"               
+ 
+  tags ={
+  Name = "Example EC2"
+  }
+  }
+
+
+
+resource "aws_cloudwatch_metric_alarm" "cpu_utilization_alarm" {
+  alarm_name          = "HighCPUUtilizationAlarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"   # Number of periods to evaluate for the condition to be true
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"  # Duration of one evaluation period (in seconds)
+  statistic           = "Average"
+  threshold           = "50"  # CPU utilization threshold for triggering the alarm
+  alarm_description   = "This metric alarm will be triggered when CPU utilization goes above 80% for 1 minute."
+  alarm_actions       = [aws_sns_topic.example.arn]
+# that looks for average CPU to exceed 50% in 1 evaluation periods that last 60 seconds each.
+  dimensions = {
+    InstanceId =aws_instance.example.id
+  }
+}
+
+resource "aws_sns_topic" "examplee" {
+  name = "HighNetworkTrafficTopic"
+}
+
+
+resource "aws_sns_topic" "example" {
+  name = "HighCPUUtilizationTopic"
+}
+
+
+resource "aws_sns_topic_subscription" "example" {
+  topic_arn = aws_sns_topic.example.arn
+  protocol  = "email"
+  endpoint  = "sharmasajal555@gmail.com" 
+}

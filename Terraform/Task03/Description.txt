@@ -1,0 +1,48 @@
+After Completing  Terra form task 2 we need to extend the script as we need to make a alarm by log metric filter : 
+
+Attaching code:
+
+Note: There is special case that we need to make same name of metric name and in metric transformation  name.
+
+main.tf file : 
+
+provider "aws" {
+  region = "us-east-1" 
+  access_key = "RES3TSSMRS6PUCXUY"
+  secret_key ="LukeisNOTabSEntBfdFpCJKmlDVP76bxVrEzIPHy0XNwW6P" 
+}
+
+
+resource "aws_cloudwatch_log_metric_filter" "error-importing-metric-filter"{
+  name           = "data-import-metric-filter"
+  log_group_name = "myapp.log"
+  pattern        = "practise"
+  metric_transformation {
+    name      = "error-data-import-metric"
+    namespace = "LogMetrics"
+    value     = "1"
+   
+                        }
+}
+
+# the metric name is actually the metric transformation name. and the namespace in the metric_tranformation has to be the same as the namespace in aws_cloudwatch_metric_alarm. The correct snippet should be
+resource "aws_cloudwatch_metric_alarm" "error-importing" {
+  alarm_name = "data-import-alarm"
+  metric_name         ="error-data-import-metric" 
+  threshold           = "0"
+  statistic           = "Sum"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  datapoints_to_alarm = "1"
+  evaluation_periods  = "1"
+  period              = "60"
+  namespace           = "LogMetrics"
+ alarm_actions       = [aws_sns_topic.examplee.arn]
+}
+resource "aws_sns_topic" "examplee" {
+  name = "testingpro1"
+}
+resource "aws_sns_topic_subscription" "example" {
+  topic_arn = aws_sns_topic.examplee.arn
+  protocol  = "email"
+  endpoint  = "sajal.sharma@geminisolutions.com"
+}

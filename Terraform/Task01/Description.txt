@@ -1,0 +1,1 @@
+Deploy an EC2 instance and monitor its CPU Utilization by Terraform Script
