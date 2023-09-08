@@ -1,0 +1,40 @@
+We need to make a Script in which we should get an alert if new EC2 resource get deploy to our AWS Infra.
+provider "aws" {
+  region = "us-east-1" 
+  access_key = "ifyoucan"
+  secret_key ="cracked"
+}
+# Create an SNS topic
+resource "aws_sns_topic" "resource_creation_topic" {
+  name = "CreationTopic"
+}
+
+# Create an SNS subscription (you can replace the endpoint with your own, such as email)
+resource "aws_sns_topic_subscription" "resource_creation_subscription" {
+  topic_arn = aws_sns_topic.resource_creation_topic.arn
+  protocol  = "email"
+  endpoint  = "org@gmail.com"
+}
+
+# Create a CloudWatch Events rule to capture resource creation events
+resource "aws_cloudwatch_event_rule" "resource_creation_rule" {
+  name        = "ResourceCreationRule"
+  description = "Captures resource creation events"
+  
+  event_pattern = jsonencode({
+    
+  "source": ["aws.ec2"],
+  "detail-type": ["EC2 Instance State-change Notification"],
+  "detail": {
+    "state": ["pending"]
+  }
+
+  })
+}
+
+# Associate the CloudWatch Events rule with the SNS topic
+resource "aws_cloudwatch_event_target" "resource_creation_target" {
+  rule      = aws_cloudwatch_event_rule.resource_creation_rule.name
+  target_id = "ResourceCreationTarget"
+  arn       = aws_sns_topic.resource_creation_topic.arn
+}
