@@ -1,2 +1,1 @@
-# CloudOps
-Terraform Training 
+#Terraform Training 
